@@ -14,6 +14,7 @@ $mailadress 		= 	"support@sitename.com"; //Example
 $mailpassword 		= 	"123456"; //Example
 $mailport			=	"587"; //Example
 $mailsecure			= 	"tls"; //Example
+$contactmail		=	"contact@sitename.com"; //Example
 
 // Language
 $lang = array(
@@ -47,7 +48,7 @@ $mail->Host = $mailhost;
 							$mail->Username = $mailadress;
 							$mail->Password = $mailpassword;
 $mail->SetFrom($mail->Username, $lang['sitename']);
-$mail->AddAddress($_POST['email'], $_POST['name']);
+$mail->AddAddress($contactmail, $_POST['name']);
 $mail->CharSet = 'UTF-8';
 $mail->Subject = ''.$lang['sitename'].' - '.$_POST['subject'].'';
 $content = '<table width="100%" border="1" align="center" cellpadding="1" cellspacing="1">
