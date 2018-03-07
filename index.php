@@ -8,13 +8,18 @@ Licence: Free
 // Required Files
 require "class.phpmailer.php";
 
-// Mail info
+// Mail settings
 $mailhost			=	"mail.sitename.com"; //Example
 $mailadress 		= 	"support@sitename.com"; //Example
 $mailpassword 		= 	"123456"; //Example
 $mailport			=	"587"; //Example
 $mailsecure			= 	"tls"; //Example
 $contactmail		=	"contact@sitename.com"; //Example
+
+//Captcha Settings
+$captchaenabled 	= 	"yes"; // yes or no
+$sitekey			=	"6LfZK0sUAAAAABeHeK9XfDGImRderbpkgmWUA56U"; //Example
+$secretkey			=	"6LfZK0sUAAAAAIvOozQEpfnKHuk_RemR7Bq2-Wpz"; //Example
 
 // Language
 $lang = array(
@@ -33,61 +38,8 @@ $lang = array(
 	"success"			=>		"Successful!",
 	"sendsuccess"		=>		"Your message has been sent!",
 	"err"				=>		"Something went wrong!",
+	"captchaerror"		=>		"Please verify the Captcha code!",
 );
-
-//Mail Function
-if (isset($_POST["send"])) {
-	if(!empty($_POST["name"] and $_POST["email"] and $_POST["subject"] and $_POST["message"])) {
-		if(filter_var($_POST["email"], FILTER_VALIDATE_EMAIL)){
-   $mail = new PHPMailer();
-$mail->IsSMTP();
-$mail->Host = $mailhost;
-							$mail->Port = $mailport;
-							$mail->SMTPSecure = $mailsecure;
-							$mail->SMTPAuth = true;
-							$mail->Username = $mailadress;
-							$mail->Password = $mailpassword;
-$mail->SetFrom($mail->Username, $lang['sitename']);
-$mail->AddAddress($contactmail, $_POST['name']);
-$mail->CharSet = 'UTF-8';
-$mail->Subject = ''.$lang['sitename'].' - '.$_POST['subject'].'';
-$content = '<table width="100%" border="1" align="center" cellpadding="1" cellspacing="1">
-    <tbody>
-        <tr>
-            <td>Name</td>
-            <td>'.$_POST['name'].'</td>
-        </tr>
-        <tr>
-            <td>E-mail</td>
-            <td>'.$_POST['email'].'</td>
-        </tr>
-        <tr>
-            <td>Subject</td>
-            <td>'.$_POST['subject'].'</td>
-        </tr>
-        <tr>
-            <td>Date</td>
-            <td>'.date("F j, Y, g:i a").'</td>
-        </tr>
-        <tr>
-            <td>IP Adress</td>
-            <td>'.$_SERVER['REMOTE_ADDR'].'</td>
-        </tr>
-        <tr>
-            <td>Message</td>
-            <td>'.htmlspecialchars($_POST['message']).'</td>
-        </tr>
-    </tbody>
-</table>';
-$mail->MsgHTML($content);
-if($mail->Send()) {
-    $pagemessage = '<div class="alert alert-success"><strong>'.$lang['success'].'</strong> '.$lang['sendsuccess'].'</div>';
-} else {
-    $pagemessage = '<div class="alert alert-danger">'.$lang['err'].'</div>';
-}
-	} else { $pagemessage = '<div class="alert alert-danger"><strong>'.$lang['error'].'</strong> '.$lang['wrongemail'].'</div>'; }
-	} else { $pagemessage = '<div class="alert alert-danger"><strong>'.$lang['error'].'</strong> '.$lang['emptyarea'].'</div>'; }
-}
 ?>
 <html>
 <head>
@@ -102,6 +54,12 @@ if($mail->Send()) {
 <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 <!--Bootstrap CDN -->
+
+<?php if($captchaenabled == "yes") { ?>
+<!-- Captcha API -->
+<script src='https://www.google.com/recaptcha/api.js'></script>
+<!-- Captcha API -->
+<?php } ?>
 
 <!-- Custom CSS -->
 <style type="text/css">
@@ -127,6 +85,27 @@ body::after {
 <!-- Custom CSS -->
 </head>
 <body>
+<?php
+//Mail Function
+if (isset($_POST["send"])) {
+	if(!empty($_POST["name"] and $_POST["email"] and $_POST["subject"] and $_POST["message"])) {
+		if(filter_var($_POST["email"], FILTER_VALIDATE_EMAIL)){
+			if($captchaenabled == "yes") {
+				if (isset($_POST['g-recaptcha-response'])) {
+				$captcha = $_POST['g-recaptcha-response'];
+				}
+					$control = file_get_contents("https://www.google.com/recaptcha/api/siteverify?secret=".$secretkey."&response=" . $captcha . "&remoteip=" . $_SERVER['REMOTE_ADDR']);
+					$check = json_decode($control);
+						if($check->success == false) {
+							$pagemessage = '<div class="alert alert-danger"><strong>'.$lang['error'].'</strong> '.$lang['captchaerror'].'</div>'; 
+							} else {
+								include "mail-content.php";
+									} 
+										} else { include "mail-content.php"; }
+	} else { $pagemessage = '<div class="alert alert-danger"><strong>'.$lang['error'].'</strong> '.$lang['wrongemail'].'</div>'; }
+	} else { $pagemessage = '<div class="alert alert-danger"><strong>'.$lang['error'].'</strong> '.$lang['emptyarea'].'</div>'; }
+}
+?>
 <div class="container"> <!-- container -->
 <div class="row"> <!-- row -->
 <div class="col-md-6 col-md-offset-3"> <!-- columb -->
@@ -160,6 +139,10 @@ body::after {
 <div class="form-group" style="float: right;">
 <button type="submit" name="send" class="btn btn-default" style="min-width: 150px;"><?=$lang['send'];?></button>
 </div>
+
+<?php if($captchaenabled == "yes") { ?>
+<div class="g-recaptcha" data-sitekey="<?=$sitekey?>"></div>
+<?php } ?>
 </form>
 <!-- Contact Form -->
 </div> <!-- /panel -->
